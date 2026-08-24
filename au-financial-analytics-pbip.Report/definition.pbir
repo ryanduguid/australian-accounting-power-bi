@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "datasetReference": {
+    "byPath": {
+      "path": "../au-financial-analytics-pbip.SemanticModel"
+    },
+    "byConnection": null
+  }
+}

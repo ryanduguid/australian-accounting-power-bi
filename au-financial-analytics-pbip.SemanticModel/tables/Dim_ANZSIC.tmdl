@@ -1,0 +1,35 @@
+table Dim_ANZSIC
+	lineageTag: a1b2c3d4-anzsic-0004-8899-aabbccddeeff
+
+	column ANZSIC_Code
+		dataType: string
+		isKey
+		lineageTag: anz-col-0001
+		summarizeBy: none
+		sourceColumn: ANZSIC_Code
+
+	column Division
+		dataType: string
+		lineageTag: anz-col-0002
+		summarizeBy: none
+		sourceColumn: Division
+
+	column Subdivision
+		dataType: string
+		lineageTag: anz-col-0003
+		summarizeBy: none
+		sourceColumn: Subdivision
+
+	column IndustryTitle
+		dataType: string
+		lineageTag: anz-col-0004
+		summarizeBy: none
+		sourceColumn: IndustryTitle
+
+	partition Dim_ANZSIC = m
+		mode: import
+		source =
+			let
+				Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i45WclTSUQrJSFXSUXIK9nRUitWJVnLKK83JUwjIz8tLzMksLgFxXBLLSrMyU1NzwGIh+UWVhsaGZoaGBkYmhmZGFoYmBhbGQDEjAwslx8Si7MS0VAUDpVidaCVnINfM2NLcAMkYv9S8EgWnxKLMktzk1BII08rEwtrMBKTEysTMyMLACGS1MVb3wU2IBQA=", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [ANZSIC_Code = _t, Division = _t, Subdivision = _t, IndustryTitle = _t])
+			in
+				Source

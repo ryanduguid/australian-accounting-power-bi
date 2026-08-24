@@ -1,0 +1,3 @@
+definition
+	database 'au-financial-analytics-pbip'
+		compatibilityLevel: 1600
