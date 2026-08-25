@@ -2,7 +2,7 @@
 
 [![Verify](https://github.com/ryanduguid/au-financial-analytics-pbip/actions/workflows/verify.yml/badge.svg)](https://github.com/ryanduguid/au-financial-analytics-pbip/actions/workflows/verify.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A production-grade, source-controlled Power BI Project (`.pbip`) demonstrating advanced Australian accounting domain modelling, dimensional star schema design, Tabular Model Definition Language (TMDL), calculation groups, and automated GitHub Actions CI verification.
+**Status: incubating.** This source-controlled Power BI Project (`.pbip`) is an evolving reference implementation, not a production-ready Power BI solution. It demonstrates Australian accounting domain modelling, dimensional star schema design, Tabular Model Definition Language (TMDL), calculation groups, and automated GitHub Actions CI verification.
 
 ---
 
