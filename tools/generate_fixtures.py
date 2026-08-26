@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import csv
 import datetime
-import math
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -238,7 +237,6 @@ def generate_fixtures():
     add_balanced_journal("2024-07-01", "ENT004", "Opening Balance FY25", [("100", 60000.0), ("250", 1800000.0)], [("400", 900000.0), ("500", 100.0), ("510", 959900.0)])
 
     # Monthly operational cycles for 36 months (Jul 2024 to Jun 2027)
-    start_date = datetime.date(2024, 7, 1)
     for m_idx in range(36):
         # Calculate month date (around 15th and 28th)
         year = 2024 + (7 + m_idx - 1) // 12
