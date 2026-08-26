@@ -2,7 +2,7 @@
 // Ingests Single Touch Payroll (STP Phase 2) events and evaluates Payday Super compliance.
 
 let
-    Source = Csv.Document(File.Contents("samples/sample-payroll-super.csv"), [Delimiter=",", Columns=15, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+    Source = Csv.Document(File.Contents("samples/sample-payroll-super.csv"), [Delimiter=",", Columns=16, Encoding=65001, QuoteStyle=QuoteStyle.None]),
     PromoteHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
     TypedTable = Table.TransformColumnTypes(PromoteHeaders, {
         {"EventID", type text},
