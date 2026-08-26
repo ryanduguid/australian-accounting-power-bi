@@ -2,7 +2,7 @@
 // Ingests and types the multi-entity corporate structure master table.
 
 let
-    Source = Csv.Document(File.Contents("samples/sample-entities.csv"), [Delimiter=",", Columns=9, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+    Source = Csv.Document(File.Contents("samples/sample-entities.csv"), [Delimiter=",", Columns=10, Encoding=65001, QuoteStyle=QuoteStyle.None]),
     PromoteHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
     TypedTable = Table.TransformColumnTypes(PromoteHeaders, {
         {"EntityID", type text},
