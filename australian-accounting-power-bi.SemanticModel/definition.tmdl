@@ -1,0 +1,3 @@
+definition
+	database 'australian-accounting-power-bi'
+		compatibilityLevel: 1600

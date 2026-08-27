@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-generate_fixtures.py - Deterministic synthetic fixture generator for au-financial-analytics-pbip.
+generate_fixtures.py - Deterministic synthetic fixture generator for Australian Accounting Power BI.
 
 Generates balanced double-entry general ledger journals, chart of accounts, multi-entity masters,
 budgets, Payday Super payroll events (STP Phase 2), and ATO Small Business Benchmark distributions.
