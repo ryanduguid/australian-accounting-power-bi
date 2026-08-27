@@ -1,6 +1,6 @@
 # Statutory & Compliance Methodology
 
-This document details the Australian statutory frameworks, tax laws, and accounting standards modelled in `au-financial-analytics-pbip`.
+This document details the Australian statutory frameworks, tax laws, and accounting standards modelled in Australian Accounting Power BI.
 
 ---
 

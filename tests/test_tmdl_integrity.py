@@ -4,16 +4,36 @@ test_tmdl_integrity.py - Validates TMDL definitions, star schema relationships, 
 
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-TMDL_TABLES_DIR = BASE_DIR / "au-financial-analytics-pbip.SemanticModel" / "tables"
-RELATIONSHIPS_FILE = BASE_DIR / "au-financial-analytics-pbip.SemanticModel" / "relationships.tmdl"
+PROJECT_NAME = "australian-accounting-power-bi"
+PROJECT_FILE = BASE_DIR / f"{PROJECT_NAME}.pbip"
+REPORT_DIR = BASE_DIR / f"{PROJECT_NAME}.Report"
+SEMANTIC_MODEL_DIR = BASE_DIR / f"{PROJECT_NAME}.SemanticModel"
+TMDL_TABLES_DIR = SEMANTIC_MODEL_DIR / "tables"
+RELATIONSHIPS_FILE = SEMANTIC_MODEL_DIR / "relationships.tmdl"
 
 
 class TestTmdlIntegrity(unittest.TestCase):
+    def test_project_path_graph_uses_one_canonical_identifier(self) -> None:
+        project = json.loads(PROJECT_FILE.read_text(encoding="utf-8"))
+        report = json.loads((REPORT_DIR / "definition.pbir").read_text(encoding="utf-8"))
+        model = (SEMANTIC_MODEL_DIR / "definition.tmdl").read_text(encoding="utf-8")
+
+        self.assertEqual(
+            project["artifacts"][0]["report"]["path"],
+            f"{PROJECT_NAME}.Report",
+        )
+        self.assertEqual(
+            report["datasetReference"]["byPath"]["path"],
+            f"../{PROJECT_NAME}.SemanticModel",
+        )
+        self.assertIn(f"database '{PROJECT_NAME}'", model)
+
     def test_tables_directory_exists_and_populated(self) -> None:
         self.assertTrue(TMDL_TABLES_DIR.is_dir(), "TMDL tables directory must exist")
         tmdl_files = list(TMDL_TABLES_DIR.glob("*.tmdl"))
