@@ -2,7 +2,7 @@
   "version": "1.0",
   "datasetReference": {
     "byPath": {
-      "path": "../au-financial-analytics-pbip.SemanticModel"
+      "path": "../australian-accounting-power-bi.SemanticModel"
     },
     "byConnection": null
   }

@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in improving `au-financial-analytics-pbip`.
+Thank you for your interest in improving Australian Accounting Power BI.
 
 ## Core Principles
 

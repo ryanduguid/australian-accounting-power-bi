@@ -1,6 +1,6 @@
-# Australian Financial Analytics & Compliance Power BI Project (`.pbip`)
+# Australian Accounting Power BI
 
-[![Verify](https://github.com/ryanduguid/au-financial-analytics-pbip/actions/workflows/verify.yml/badge.svg)](https://github.com/ryanduguid/au-financial-analytics-pbip/actions/workflows/verify.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Verify](https://github.com/ryanduguid/australian-accounting-power-bi/actions/workflows/verify.yml/badge.svg)](https://github.com/ryanduguid/australian-accounting-power-bi/actions/workflows/verify.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Status: incubating.** This source-controlled Power BI Project (`.pbip`) is an evolving reference implementation, not a production-ready Power BI solution. It demonstrates Australian accounting domain modelling, dimensional star schema design, Tabular Model Definition Language (TMDL), calculation groups, and automated GitHub Actions CI verification.
 
@@ -66,7 +66,7 @@ See [docs/dax-patterns.md](docs/dax-patterns.md) for full DAX formulas and prece
 ## Repository Layout
 
 ```text
-au-financial-analytics-pbip/
+australian-accounting-power-bi/
 ├── .github/
 │   └── workflows/
 │       └── verify.yml                   # CI: TMDL schema validation & fixture balance check
@@ -74,12 +74,12 @@ au-financial-analytics-pbip/
 │   ├── data-model.md                    # Star schema diagram & dimension specifications
 │   ├── dax-patterns.md                  # Calculation groups & financial statement DAX
 │   └── compliance-methodology.md        # Australian tax & Payday Super calculation rules
-├── model.pbip                           # Power BI Project root descriptor
-├── au-financial-analytics-pbip.Report/  # Enhanced Report Format (PBIR)
+├── australian-accounting-power-bi.pbip  # Power BI Project root descriptor
+├── australian-accounting-power-bi.Report/ # Enhanced Report Format (PBIR)
 │   ├── definition.pbir
 │   └── definition/
 │       └── report.json                  # Canvas themes, page layouts, visual configs
-├── au-financial-analytics-pbip.SemanticModel/ # Tabular Model Definition Language (TMDL)
+├── australian-accounting-power-bi.SemanticModel/ # Tabular Model Definition Language (TMDL)
 │   ├── definition.tmdl
 │   ├── model.tmdl
 │   ├── relationships.tmdl               # Unidirectional star schema relationships
@@ -132,8 +132,8 @@ The test suite verifies:
 
 ## Opening the Project
 
-1. Open `au-financial-analytics-pbip.pbip` in **Power BI Desktop** (Developer Mode enabled).
-2. Or inspect and edit the semantic model directly in **Tabular Editor 3 / 2** by opening the `au-financial-analytics-pbip.SemanticModel` directory.
+1. Open `australian-accounting-power-bi.pbip` in **Power BI Desktop** (Developer Mode enabled).
+2. Or inspect and edit the semantic model directly in **Tabular Editor 3 / 2** by opening the `australian-accounting-power-bi.SemanticModel` directory.
 3. Or view and edit TMDL files in **Visual Studio Code** using the Microsoft TMDL extension.
 
 ---
