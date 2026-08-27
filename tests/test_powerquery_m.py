@@ -1,6 +1,4 @@
-"""
-test_powerquery_m.py - Static syntax and structure checks for Power Query (M) modules.
-"""
+"""Static syntax and fixture checks for TMDL-embedded Power Query expressions."""
 
 from __future__ import annotations
 
@@ -10,44 +8,81 @@ import unittest
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-PQ_DIR = BASE_DIR / "powerquery"
+EXPRESSIONS_FILE = (
+    BASE_DIR
+    / "australian-accounting-power-bi.SemanticModel"
+    / "definition"
+    / "expressions.tmdl"
+)
 SAMPLES_DIR = BASE_DIR / "samples"
 
 
-class TestPowerQueryM(unittest.TestCase):
-    def test_pq_directory_exists(self) -> None:
-        self.assertTrue(PQ_DIR.is_dir(), "powerquery directory must exist")
-        pq_files = list(PQ_DIR.glob("*.pq"))
-        self.assertGreaterEqual(len(pq_files), 5, "Expected at least 5 Power Query .pq files")
+def named_expressions() -> dict[str, str]:
+    """Return the fenced M source for each named TMDL expression."""
+    content = EXPRESSIONS_FILE.read_text(encoding="utf-8")
+    expressions: dict[str, str] = {}
+    pattern = re.compile(
+        r"^expression\s+(?P<name>'[^']+'|[^\s=]+)\s*=\s*```[\t ]*\r?\n"
+        r"(?P<body>.*?)(?=^[\t ]*```[\t ]*$)",
+        re.MULTILINE | re.DOTALL,
+    )
 
-    def test_pq_files_balanced_let_in(self) -> None:
+    for match in pattern.finditer(content):
+        name = match.group("name").strip("'")
+        if name in expressions:
+            raise AssertionError(f"Duplicate named expression: {name}")
+        expressions[name] = match.group("body")
+
+    return expressions
+
+
+class TestPowerQueryM(unittest.TestCase):
+    def test_expected_named_expressions_are_embedded_in_tmdl(self) -> None:
+        self.assertTrue(EXPRESSIONS_FILE.is_file(), "expressions.tmdl must exist")
+        self.assertEqual(
+            sorted(named_expressions()),
+            [
+                "Dim_Account",
+                "Dim_Date_AU",
+                "Dim_Entity",
+                "Fact_ATOBenchmark",
+                "Fact_Budget",
+                "Fact_GeneralLedger",
+                "Fact_PayrollSuper",
+                "Fx_ValidateABN",
+            ],
+        )
+
+    def test_named_expressions_have_balanced_let_in_blocks(self) -> None:
         """Every M script must have balanced let ... in blocks."""
-        for pq_file in PQ_DIR.glob("*.pq"):
-            content = pq_file.read_text(encoding="utf-8")
-            let_count = content.count("let")
-            in_count = content.count("in\n") + content.count("in\r\n") + content.count(" in ") + (1 if content.strip().endswith("in") else 0)
-            self.assertGreaterEqual(let_count, 1, f"{pq_file.name} missing 'let'")
-            self.assertGreaterEqual(in_count, 1, f"{pq_file.name} missing 'in'")
+        for name, content in named_expressions().items():
+            with self.subTest(expression=name):
+                let_count = len(re.findall(r"^[\t ]*let[\t ]*$", content, re.MULTILINE))
+                in_count = len(re.findall(r"^[\t ]*in[\t ]*$", content, re.MULTILINE))
+                self.assertGreaterEqual(let_count, 1, f"{name} missing 'let'")
+                self.assertEqual(let_count, in_count, f"{name} has unbalanced let/in blocks")
 
     def test_abn_validator_m_logic(self) -> None:
-        """Verify Fx_ValidateABN.pq references the statutory ATO weights and Modulus 89."""
-        abn_pq = PQ_DIR / "Fx_ValidateABN.pq"
-        self.assertTrue(abn_pq.is_file(), "Fx_ValidateABN.pq must exist")
-        content = abn_pq.read_text(encoding="utf-8")
+        """Verify the ABN expression uses the statutory weights and Modulus 89."""
+        content = named_expressions()["Fx_ValidateABN"]
         self.assertIn("10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19", content)
         self.assertIn("Number.Mod", content)
         self.assertIn("89", content)
 
     def test_csv_source_column_counts_match_fixture_rows(self) -> None:
         cases = {
-            "Dim_Account.pq": "sample-chart-of-accounts.csv",
-            "Dim_Entity.pq": "sample-entities.csv",
-            "Fact_PayrollSuper.pq": "sample-payroll-super.csv",
+            "Dim_Account": "sample-chart-of-accounts.csv",
+            "Dim_Entity": "sample-entities.csv",
+            "Fact_ATOBenchmark": "sample-ato-benchmarks.csv",
+            "Fact_Budget": "sample-budgets.csv",
+            "Fact_GeneralLedger": "sample-general-ledger.csv",
+            "Fact_PayrollSuper": "sample-payroll-super.csv",
         }
+        expressions = named_expressions()
 
         for query_name, sample_name in cases.items():
             with self.subTest(query=query_name):
-                content = (PQ_DIR / query_name).read_text(encoding="utf-8")
+                content = expressions[query_name]
                 match = re.search(r"\bColumns=(\d+)\b", content)
                 self.assertIsNotNone(match, f"{query_name} must declare its CSV width")
                 declared_columns = int(match.group(1))  # type: ignore[union-attr]
@@ -65,7 +100,7 @@ class TestPowerQueryM(unittest.TestCase):
                 )
 
     def test_dim_account_preserves_quoted_account_name(self) -> None:
-        content = (PQ_DIR / "Dim_Account.pq").read_text(encoding="utf-8")
+        content = named_expressions()["Dim_Account"]
         self.assertIn("QuoteStyle=QuoteStyle.Csv", content)
 
         with (SAMPLES_DIR / "sample-chart-of-accounts.csv").open(

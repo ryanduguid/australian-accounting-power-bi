@@ -11,7 +11,7 @@
 Most Power BI repositories on GitHub commit monolithic binary `.pbix` blobs with zero diffability, no automated test suites, and generic mock sales data.
 
 This project treats Power BI as source-controlled software engineering:
-1. **Plain-Text Version Control**: Built entirely on the Power BI Project format (`.pbip`), using Tabular Model Definition Language (`.tmdl`) and Enhanced Report Format (`.pbir`). Every measure, visual, relationship, and M partition produces clean, reviewable git diffs.
+1. **Plain-Text Version Control**: Built entirely on the Power BI Project format (`.pbip`), using Tabular Model Definition Language (`.tmdl`) and Enhanced Report Format (`.pbir`). Measures, visuals, relationships, and M expressions produce reviewable git diffs.
 2. **3-Way Financial Statements & Multi-Entity Consolidation**: P&L, Balance Sheet, and Cash Flow matrix reporting across a multi-entity corporate group (operating company, trading subsidiary, logistics entity, property trust) with automated intercompany transaction eliminations.
 3. **ATO Small Business Benchmarks Diagnostic**: Ingests ANZSIC industry classifications and scores business cost structures against official Australian Taxation Office benchmark bands and PCG 2026/1 compliance risk zones.
 4. **Live Payday Super Compliance Monitoring**: Tracks Single Touch Payroll Phase 2 events (Code Q - Qualifying Earnings, Code L - Super Liability at 12.0%) against the statutory 7-business-day fund receipt rule commencing 1 July 2026, including automated SGC shortfall and GIC nominal interest exposure calculators.
@@ -76,19 +76,20 @@ australian-accounting-power-bi/
 │   └── compliance-methodology.md        # Australian tax & Payday Super calculation rules
 ├── australian-accounting-power-bi.pbip  # Power BI Project root descriptor
 ├── australian-accounting-power-bi.Report/ # Enhanced Report Format (PBIR)
+│   ├── .platform                         # Fabric item metadata
 │   ├── definition.pbir
 │   └── definition/
-│       └── report.json                  # Canvas themes, page layouts, visual configs
+│       ├── version.json
+│       ├── report.json                  # Report settings and base theme
+│       └── pages/                       # Four pages and 21 source-controlled visuals
 ├── australian-accounting-power-bi.SemanticModel/ # Tabular Model Definition Language (TMDL)
-│   ├── definition.tmdl
-│   ├── model.tmdl
-│   ├── relationships.tmdl               # Unidirectional star schema relationships
-│   └── tables/                          # One TMDL file per dimension, fact, and calculation group
-├── powerquery/                          # Standalone Power Query (M) transformations
-│   ├── Dim_Date_AU.pq                   # Australian Financial Year generator (1 Jul - 30 Jun)
-│   ├── Fx_ValidateABN.pq                # Statutory ATO ABN Modulus-89 checksum validator
-│   ├── Fact_GeneralLedger.pq            # GL ingestion and staging query
-│   └── Fact_PayrollSuper.pq             # STP & Payday Super staging query
+│   ├── definition.pbism                 # Semantic model descriptor
+│   └── definition/
+│       ├── database.tmdl                # Database compatibility and language
+│       ├── model.tmdl                   # Canonical table and expression references
+│       ├── relationships.tmdl           # Unidirectional star schema relationships
+│       ├── expressions.tmdl             # Eight named Power Query (M) expressions
+│       └── tables/                      # Dimensions, facts, and calculation groups
 ├── samples/                             # Deterministic fabricated CSV fixtures
 │   ├── sample-entities.csv              # Varrock Ventures, Draynor Produce, Falador Freight
 │   ├── sample-chart-of-accounts.csv     # Standard Australian Chart of Accounts
@@ -99,7 +100,8 @@ australian-accounting-power-bi/
 ├── tests/
 │   ├── test_fixtures_balance.py         # Asserts debits == credits per journal and period
 │   ├── test_tmdl_integrity.py           # Asserts TMDL syntax, explicit measure formats, descriptions
-│   ├── test_powerquery_m.py             # Validates Power Query M syntax and structure
+│   ├── test_powerquery_m.py             # Validates embedded Power Query M and fixture widths
+│   ├── test_pbip_structure.py           # Validates PBIP layout and report-to-model bindings
 │   ├── test_payday_super_rules.py       # Verifies Payday Super 7-business-day statutory rules
 │   └── model_bpa_rules.json             # Tabular Model Best Practice Analyzer ruleset
 ├── tools/
@@ -120,13 +122,23 @@ Run the test suite locally:
 python -B -m unittest discover -s tests -v
 ```
 
+With Node.js 24 available, run Microsoft's pinned PBIR validator:
+
+```bash
+npx --yes @microsoft/powerbi-report-authoring-cli@0.1.4 validate australian-accounting-power-bi.Report
+```
+
 The test suite verifies:
 - Every journal in `sample-general-ledger.csv` balances to zero (debits equal credits).
 - Intercompany entries balance to zero across the group.
-- Every DAX measure in TMDL contains explicit `formatString` and `description` metadata.
+- Every DAX measure uses supported `///` description syntax, and every numeric measure has an explicit format string.
 - All relationships enforce strict single-direction star schema filtering.
-- Power Query M scripts contain valid balanced `let ... in` expressions and valid ABN algorithm weights.
+- All eight named Power Query expressions use balanced `let ... in` blocks, valid fixture widths, and valid ABN algorithm weights.
+- The semantic model uses the supported TMDL folder contract and resolves every import partition.
+- All four report pages and 21 visuals are materialised, and every visual field binding resolves to a declared model column or measure.
 - Payday Super tests assert 12.0% SG rate, 7-business-day national calendar calculation, and leap year GIC divisors (366 days in leap years per s 8AAD TAA).
+
+GitHub Actions runs both the Python suite and the pinned Microsoft PBIR validator.
 
 ---
 
@@ -135,6 +147,8 @@ The test suite verifies:
 1. Open `australian-accounting-power-bi.pbip` in **Power BI Desktop** (Developer Mode enabled).
 2. Or inspect and edit the semantic model directly in **Tabular Editor 3 / 2** by opening the `australian-accounting-power-bi.SemanticModel` directory.
 3. Or view and edit TMDL files in **Visual Studio Code** using the Microsoft TMDL extension.
+
+Automated checks validate the source structure and bindings, but they do not refresh the model or render the report in Power BI Desktop. Complete that native smoke test before treating a release as production-ready.
 
 ---
 

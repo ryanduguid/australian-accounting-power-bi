@@ -14,15 +14,17 @@ PROJECT_NAME = "australian-accounting-power-bi"
 PROJECT_FILE = BASE_DIR / f"{PROJECT_NAME}.pbip"
 REPORT_DIR = BASE_DIR / f"{PROJECT_NAME}.Report"
 SEMANTIC_MODEL_DIR = BASE_DIR / f"{PROJECT_NAME}.SemanticModel"
-TMDL_TABLES_DIR = SEMANTIC_MODEL_DIR / "tables"
-RELATIONSHIPS_FILE = SEMANTIC_MODEL_DIR / "relationships.tmdl"
+TMDL_DIR = SEMANTIC_MODEL_DIR / "definition"
+TMDL_TABLES_DIR = TMDL_DIR / "tables"
+RELATIONSHIPS_FILE = TMDL_DIR / "relationships.tmdl"
+DATABASE_FILE = TMDL_DIR / "database.tmdl"
 
 
 class TestTmdlIntegrity(unittest.TestCase):
     def test_project_path_graph_uses_one_canonical_identifier(self) -> None:
         project = json.loads(PROJECT_FILE.read_text(encoding="utf-8"))
         report = json.loads((REPORT_DIR / "definition.pbir").read_text(encoding="utf-8"))
-        model = (SEMANTIC_MODEL_DIR / "definition.tmdl").read_text(encoding="utf-8")
+        database = DATABASE_FILE.read_text(encoding="utf-8")
 
         self.assertEqual(
             project["artifacts"][0]["report"]["path"],
@@ -32,7 +34,7 @@ class TestTmdlIntegrity(unittest.TestCase):
             report["datasetReference"]["byPath"]["path"],
             f"../{PROJECT_NAME}.SemanticModel",
         )
-        self.assertIn(f"database '{PROJECT_NAME}'", model)
+        self.assertIn(f"database '{PROJECT_NAME}'", database)
 
     def test_tables_directory_exists_and_populated(self) -> None:
         self.assertTrue(TMDL_TABLES_DIR.is_dir(), "TMDL tables directory must exist")
@@ -53,40 +55,48 @@ class TestTmdlIntegrity(unittest.TestCase):
             self.assertIn(".", from_col, f"Relationship {name} fromColumn must include table name")
             self.assertIn(".", to_col, f"Relationship {name} toColumn must include table name")
 
-    def test_all_measures_have_format_string_and_description(self) -> None:
-        """Enforces enterprise BI best practice: every explicit measure must be documented and formatted."""
+    def test_all_measures_have_supported_descriptions_and_numeric_formats(self) -> None:
+        """Require descriptions for every measure and formats for non-text measures."""
         tmdl_files = list(TMDL_TABLES_DIR.glob("*.tmdl"))
         measure_count = 0
+        unformatted_measures: list[str] = []
 
         for tmdl_file in tmdl_files:
-            content = tmdl_file.read_text(encoding="utf-8")
-            # Find all measure blocks
-            # Pattern matches: measure 'Name' = ... or measure Name = ...
-            measure_matches = re.finditer(
-                r"\bmeasure\s+(?:'([^']+)'|([\w\s%$\(\)]+))\s*=",
-                content,
-            )
+            lines = tmdl_file.read_text(encoding="utf-8").splitlines()
+            object_starts = [
+                index
+                for index, line in enumerate(lines)
+                if re.match(
+                    r"^\t(?:measure|column|partition|hierarchy|calculationGroup|annotation)\b",
+                    line,
+                )
+            ]
 
-            for match in measure_matches:
-                measure_name = match.group(1) or match.group(2)
+            for index, line in enumerate(lines):
+                if not line.startswith("\tmeasure "):
+                    continue
+
+                measure_name = line.removeprefix("\tmeasure ").split(" =", 1)[0].strip("'")
                 measure_count += 1
-                start_pos = match.start()
-                # Grab a chunk following the measure definition to inspect attributes
-                chunk = content[start_pos : start_pos + 1200]
-
-                has_format_string = "formatString:" in chunk or "formatStringDefinition" in chunk
-                has_description = "description:" in chunk
-
-                self.assertTrue(
-                    has_format_string,
-                    f"Measure [{measure_name}] in {tmdl_file.name} is missing an explicit formatString",
+                next_object = next(
+                    (object_index for object_index in object_starts if object_index > index),
+                    len(lines),
                 )
+                block = "\n".join(lines[index:next_object])
+
+                if "formatString:" not in block and "formatStringDefinition" not in block:
+                    unformatted_measures.append(f"{tmdl_file.name}:[{measure_name}]")
                 self.assertTrue(
-                    has_description,
-                    f"Measure [{measure_name}] in {tmdl_file.name} is missing a description",
+                    index > 0 and lines[index - 1].startswith("\t/// "),
+                    f"Measure [{measure_name}] in {tmdl_file.name} is missing a supported description",
                 )
 
-        self.assertGreaterEqual(measure_count, 15, "Expected at least 15 explicit DAX measures across model")
+        self.assertEqual(measure_count, 43, "Expected exactly 43 explicit DAX measures across model")
+        self.assertEqual(
+            unformatted_measures,
+            ["Fact_ATOBenchmark.tmdl:[ATO Compliance Risk Profile]"],
+            "Only the text-valued risk-profile measure may omit a numeric format string",
+        )
 
     def test_calculation_groups_have_precedence_and_ordinals(self) -> None:
         """Calculation groups must declare explicit precedence and ordinals on calculation items."""
