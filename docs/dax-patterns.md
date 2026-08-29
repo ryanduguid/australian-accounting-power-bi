@@ -1,6 +1,6 @@
 # DAX Patterns & Calculation Groups Reference
 
-This model uses Calculation Groups to streamline time intelligence and multi-entity consolidation while keeping core business logic DRY (Don't Repeat Yourself).
+This model uses Calculation Groups for time intelligence and multi-entity consolidation so core measures stay in one place (DRY: Don't Repeat Yourself).
 
 ---
 
