@@ -10,6 +10,7 @@ Zero client or real taxpayer data is used. All entities use fictional place name
 
 from __future__ import annotations
 
+import calendar
 import csv
 import datetime
 from pathlib import Path
@@ -58,6 +59,64 @@ NATIONAL_HOLIDAYS = {
     datetime.date(2027, 12, 27), # Christmas Day (Observed)
     datetime.date(2027, 12, 28), # Boxing Day (Observed)
 }
+
+# ATO published general interest charge annual rates, keyed by calendar quarter.
+# GIC is reset every quarter, so an accrual that crosses a quarter boundary must use each
+# day's own rate rather than one rate for the whole period.
+GIC_PUBLISHED_RATES = {
+    (2026, 3): 0.1143,  # July-September 2026, the first quarter of the Payday Super regime
+}
+
+# Quarters the ATO has not yet published are modelled by carrying the last published rate
+# forward. This is a stated assumption, not published data. Move a rate into
+# GIC_PUBLISHED_RATES as the ATO releases it.
+GIC_PROJECTED_RATE = 0.1143
+
+# Administrative uplift for a qualifying earnings day: 60% of individual final SG shortfalls
+# plus individual notional earnings (SGAA 1992 s 19B). Reducible by 20 percentage points for a
+# clean assessment history and further on voluntary disclosure; no reduction is modelled here.
+ADMIN_UPLIFT_RATE = 0.60
+
+
+def gic_days_in_year(year: int) -> int:
+    """Daily GIC divisor: the number of days in the calendar year (TAA 1953 s 8AAD)."""
+    return 366 if calendar.isleap(year) else 365
+
+
+def gic_quarter(day: datetime.date) -> tuple[int, int]:
+    """Calendar quarter containing day, as (year, quarter) with quarter in 1..4."""
+    return (day.year, (day.month - 1) // 3 + 1)
+
+
+def gic_annual_rate(day: datetime.date) -> float:
+    """Annual GIC rate applying on day: published where the ATO has released it, else projected."""
+    return GIC_PUBLISHED_RATES.get(gic_quarter(day), GIC_PROJECTED_RATE)
+
+
+def gic_rate_is_published(day: datetime.date) -> bool:
+    """True when day falls in a quarter whose GIC rate the ATO has actually published."""
+    return gic_quarter(day) in GIC_PUBLISHED_RATES
+
+
+def notional_earnings(
+    base_shortfall: float, due_date: datetime.date, fund_received_date: datetime.date
+) -> float:
+    """Individual notional earnings on the base shortfall (SGAA 1992 s 19A).
+
+    Compounds daily from the day after the due day up to and including the day the fund
+    receives the contribution. Each day uses its own quarter's GIC rate and its own
+    calendar year's divisor, so an accrual spanning a quarter or year boundary is not
+    flattened onto a single rate.
+    """
+    if fund_received_date <= due_date:
+        return 0.0
+    balance = base_shortfall
+    day = due_date + datetime.timedelta(days=1)
+    while day <= fund_received_date:
+        balance += balance * (gic_annual_rate(day) / gic_days_in_year(day.year))
+        day += datetime.timedelta(days=1)
+    return round(balance - base_shortfall, 2)
+
 
 def is_national_business_day(d: datetime.date) -> bool:
     """Return True if weekday (Mon-Fri) and not a national Australian public holiday."""
@@ -364,12 +423,21 @@ def generate_fixtures():
                 # Fund received 10 business days after payday -> BREACH
                 fund_received_date = add_business_days(pay_date, 10)
                 status = "LATE_BREACH"
-                days_late = (fund_received_date - due_date).days
-                # Nominal interest at 11.34% GIC on 366-day leap year divisor (2026 is non-leap, 2024 leap)
-                days_in_yr = 366 if (fund_received_date.year % 4 == 0 and fund_received_date.year % 100 != 0) else 365
-                daily_gic = 0.1134 / days_in_yr
-                nominal_interest = round(super_liability * daily_gic * max(1, days_late), 2)
-                sgc_shortfall = round(super_liability + nominal_interest + 20.0, 2) # $20 admin component
+                # Individual notional earnings accrue from the day after the due day,
+                # compounding daily at each accrual day's own GIC rate (SGAA 1992 s 19A).
+                nominal_interest = notional_earnings(super_liability, due_date, fund_received_date)
+                # s 18D: a contribution the fund receives before the Commissioner assesses the
+                # charge reduces the individual final SG shortfall to nil. These fixtures model
+                # no earlier assessment, so a late-but-received contribution leaves only notional
+                # earnings and the uplift on them. The test is strictly received > due: a
+                # contribution that arrived by the due day was never a shortfall to offset, and
+                # must not be allowed to zero a genuine one.
+                final_shortfall = 0.0 if fund_received_date > due_date else super_liability
+                # Administrative uplift (s 19B) on final shortfalls plus notional earnings;
+                # choice loading (s 20A) is nil because every fabricated employee has a
+                # nominated fund.
+                admin_uplift = round((final_shortfall + nominal_interest) * ADMIN_UPLIFT_RATE, 2)
+                sgc_shortfall = round(final_shortfall + nominal_interest + admin_uplift, 2)
             else:
                 fund_received_date = add_business_days(pay_date, 4)
                 status = "ON_TIME"

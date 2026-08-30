@@ -75,7 +75,7 @@ table Fact_ATOBenchmark
 		formatString: 0.0%
 		lineageTag: ato-meas-0010
 
-	/// Automated risk rating aligned with ATO compliance resourcing guidelines (PCG 2026/1).
+	/// Automated risk rating derived from the variance between actual ratios and the ATO benchmark bands.
 	measure 'ATO Compliance Risk Profile' =
 			VAR GP_Diff = ABS([Gross Profit Margin %] - [ATO Benchmark Gross Profit %])
 			VAR Exp_Diff = ABS([Actual Total Expense Ratio %] - [ATO Benchmark Expense Ratio %])
