@@ -104,7 +104,7 @@ CALCULATE(
 
 ## 3. ATO Small Business Compliance Risk Diagnostic
 
-Evaluates gross profit and operating expense variances against ATO benchmark bands to assign an automated risk rating (PCG 2026/1):
+Evaluates gross profit and operating expense variances against ATO benchmark bands to assign an automated risk rating:
 
 ```dax
 measure 'ATO Compliance Risk Profile' =
