@@ -1,197 +1,23 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/reportPage/1.2.0/schema.json",
-  "theme": "ExecutiveFinancial",
-  "pages": [
-    {
-      "name": "ReportSection_P1_ExecutiveSummary",
-      "displayName": "1. Executive 3-Way Financial Performance",
-      "displayOption": "FitToPage",
-      "width": 1280,
-      "height": 720,
-      "visuals": [
-        {
-          "name": "TitleCard",
-          "type": "textbox",
-          "title": "Australian Group Financial Performance (3-Way Model)"
-        },
-        {
-          "name": "Card_Revenue",
-          "type": "card",
-          "title": "Revenue (FYTD)",
-          "measure": "Revenue"
-        },
-        {
-          "name": "Card_GrossProfit",
-          "type": "card",
-          "title": "Gross Profit Margin %",
-          "measure": "Gross Profit Margin %"
-        },
-        {
-          "name": "Card_EBITDA",
-          "type": "card",
-          "title": "EBITDA",
-          "measure": "EBITDA"
-        },
-        {
-          "name": "Card_NetAssets",
-          "type": "card",
-          "title": "Net Assets",
-          "measure": "Net Assets"
-        },
-        {
-          "name": "Matrix_PL_Statement",
-          "type": "pivotTable",
-          "title": "Consolidated Statement of Financial Performance (P&L)",
-          "rows": ["Dim_Account[ReportSection]", "Dim_Account[SubClass]", "Dim_Account[AccountName]"],
-          "columns": ["CalcGroup_TimeIntelligence[Time Calculation]"],
-          "values": ["Revenue", "COGS", "Operating Expenses", "Net Profit Before Tax"]
-        },
-        {
-          "name": "Chart_WorkingCapitalTrend",
-          "type": "lineChart",
-          "title": "Working Capital & Operating Cash Trend",
-          "category": "Dim_Date[FinancialYearMonth]",
-          "values": ["Working Capital", "Net Assets"]
-        }
-      ]
-    },
-    {
-      "name": "ReportSection_P2_Consolidation",
-      "displayName": "2. Multi-Entity Consolidation & Eliminations",
-      "displayOption": "FitToPage",
-      "width": 1280,
-      "height": 720,
-      "visuals": [
-        {
-          "name": "TitleCard_Consol",
-          "type": "textbox",
-          "title": "Multi-Entity Group Rollup & Intercompany Elimination Matrix"
-        },
-        {
-          "name": "Matrix_EntityRollup",
-          "type": "pivotTable",
-          "title": "Entity Rollup with Automated Intercompany Eliminations",
-          "rows": ["Dim_Account[Class]", "Dim_Account[AccountName]"],
-          "columns": ["Dim_Entity[LegalName]", "CalcGroup_Consolidation[Consolidation View]"],
-          "values": ["Revenue", "COGS", "Operating Expenses", "Net Profit Before Tax", "Net Assets"]
-        },
-        {
-          "name": "Table_IntercompanyLoanAudit",
-          "type": "table",
-          "title": "Intercompany Loan & Management Fee Audit Trail",
-          "columns": ["Fact_GeneralLedger[PostingDate]", "Dim_Entity[LegalName]", "Fact_GeneralLedger[IntercompanyEntityID]", "Fact_GeneralLedger[Description]", "Fact_GeneralLedger[Amount]"]
-        }
-      ]
-    },
-    {
-      "name": "ReportSection_P3_ATOBenchmarks",
-      "displayName": "3. ATO Benchmark & Practice Diagnostic",
-      "displayOption": "FitToPage",
-      "width": 1280,
-      "height": 720,
-      "visuals": [
-        {
-          "name": "TitleCard_ATO",
-          "type": "textbox",
-          "title": "ATO Small Business Benchmarks & Compliance Risk Diagnostic (PCG 2026/1)"
-        },
-        {
-          "name": "Card_RiskProfile",
-          "type": "card",
-          "title": "Compliance Risk Profile",
-          "measure": "ATO Compliance Risk Profile"
-        },
-        {
-          "name": "Card_GPMargin",
-          "type": "card",
-          "title": "Client GP Margin vs ATO Benchmark",
-          "measure": "Gross Profit Variance to Benchmark %"
-        },
-        {
-          "name": "Matrix_BenchmarkRatios",
-          "type": "pivotTable",
-          "title": "Key Expense & Margin Ratios vs ATO Industry Benchmarks",
-          "rows": ["Dim_Entity[TradingName]", "Dim_ANZSIC[IndustryTitle]"],
-          "values": [
-            "Gross Profit Margin %",
-            "ATO Benchmark Gross Profit %",
-            "Gross Profit Variance to Benchmark %",
-            "Actual Total Expense Ratio %",
-            "ATO Benchmark Expense Ratio %",
-            "Actual Labour Ratio %",
-            "ATO Benchmark Labour %",
-            "Actual Rent to Revenue %",
-            "ATO Benchmark Rent %",
-            "Actual Motor Vehicle %",
-            "ATO Benchmark Motor Vehicle %",
-            "ATO Compliance Risk Profile"
-          ]
-        },
-        {
-          "name": "Scatter_CostVariance",
-          "type": "scatterChart",
-          "title": "Gross Margin vs Operating Expense Ratio Distribution",
-          "x": "Gross Profit Margin %",
-          "y": "Actual Total Expense Ratio %",
-          "details": "Dim_Entity[TradingName]"
-        }
-      ]
-    },
-    {
-      "name": "ReportSection_P4_PaydaySuper",
-      "displayName": "4. Payday Super & STP Compliance Monitor",
-      "displayOption": "FitToPage",
-      "width": 1280,
-      "height": 720,
-      "visuals": [
-        {
-          "name": "TitleCard_Super",
-          "type": "textbox",
-          "title": "Payday Super 7-Business-Day Fund Receipt Compliance & SGC Exposure Monitor"
-        },
-        {
-          "name": "Card_ComplianceRate",
-          "type": "card",
-          "title": "Statutory Compliance Rate %",
-          "measure": "Payday Super Compliance Rate %"
-        },
-        {
-          "name": "Card_SGCExposure",
-          "type": "card",
-          "title": "Estimated SGC Shortfall & Admin Exposure",
-          "measure": "Total SGC Exposure"
-        },
-        {
-          "name": "Card_GICInterest",
-          "type": "card",
-          "title": "GIC Nominal Interest Accrued",
-          "measure": "Total GIC Nominal Interest"
-        },
-        {
-          "name": "Card_LateEvents",
-          "type": "card",
-          "title": "Late Breaches Count",
-          "measure": "Late Events Count"
-        },
-        {
-          "name": "Table_LateBreachDetail",
-          "type": "table",
-          "title": "Payday Super Late Receipt & SGC Exposure Audit Ledger",
-          "columns": [
-            "Fact_PayrollSuper[PayDate]",
-            "Fact_PayrollSuper[EmployeeName]",
-            "Dim_Entity[TradingName]",
-            "Fact_PayrollSuper[GrossEarnings]",
-            "Fact_PayrollSuper[QualifyingEarnings_CodeQ]",
-            "Fact_PayrollSuper[SuperLiability_CodeL]",
-            "Fact_PayrollSuper[StatutoryDueDate]",
-            "Fact_PayrollSuper[FundReceiptDate]",
-            "Fact_PayrollSuper[ComplianceStatus]",
-            "Fact_PayrollSuper[SGC_Shortfall]",
-            "Fact_PayrollSuper[GIC_NominalInterest]"
-          ]
-        }
-      ]
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/3.3.0/schema.json",
+  "themeCollection": {
+    "baseTheme": {
+      "name": "CY24SU10",
+      "reportVersionAtImport": {
+        "visual": "2.9.0",
+        "report": "3.3.0",
+        "page": "2.1.0"
+      },
+      "type": "SharedResources"
     }
-  ]
+  },
+  "settings": {
+    "useStylableVisualContainerHeader": true,
+    "exportDataMode": "AllowSummarizedAndUnderlying",
+    "defaultFilterActionIsDataFilter": true,
+    "defaultDrillFilterOtherVisuals": true,
+    "allowChangeFilterTypes": true,
+    "allowInlineExploration": true,
+    "useEnhancedTooltips": true
+  }
 }
