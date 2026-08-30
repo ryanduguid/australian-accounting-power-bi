@@ -41,6 +41,42 @@ def tmdl_field_inventory() -> dict[str, dict[str, set[str]]]:
     return inventory
 
 
+# Metric words that a visual title may only use when the visual actually binds a field
+# whose table or name carries the same word. Deliberately excludes words a title can
+# legitimately use without a matching binding, such as "Intercompany" on the rollup
+# pivot, where the elimination is applied by CalcGroup_Consolidation.
+TITLE_METRIC_WORDS = (
+    "Cash",
+    "Revenue",
+    "EBITDA",
+    "Working Capital",
+    "Net Assets",
+    "GIC",
+    "SGC",
+    "Benchmark",
+    "Compliance",
+    "Expense",
+)
+
+
+def visual_title(visual: object) -> str:
+    """Return a visual's rendered title literal, or an empty string when it has none."""
+    if not isinstance(visual, dict):
+        return ""
+    titles = visual.get("visualContainerObjects", {}).get("title", [])
+    if not isinstance(titles, list) or not titles:
+        return ""
+    literal = (
+        titles[0]
+        .get("properties", {})
+        .get("text", {})
+        .get("expr", {})
+        .get("Literal", {})
+        .get("Value", "")
+    )
+    return literal.strip("'") if isinstance(literal, str) else ""
+
+
 def query_field_bindings(node: object) -> list[tuple[str, str, str]]:
     """Recursively collect (kind, table, field) bindings from PBIR query state."""
     bindings: list[tuple[str, str, str]] = []
@@ -229,6 +265,39 @@ class ReportStructureTests(unittest.TestCase):
 
         self.assertGreater(len(bindings), 0, "Expected data-bound PBIR visuals")
         self.assertEqual(missing, [])
+
+    def test_visual_titles_do_not_name_metrics_the_visual_does_not_plot(self) -> None:
+        """A title is the only label a reader gets, so it must not name an absent metric.
+
+        The line chart on page 1 was titled "Working Capital & Operating Cash Trend" while
+        plotting Working Capital and Net Assets. The model has no cash measure at all, so
+        the title promised a series that could not be there and that no reader could catch.
+        """
+        titled = 0
+        unsupported: list[str] = []
+
+        for visual_path in sorted(
+            (REPORT_DEFINITION / "pages").glob("*/visuals/*/visual.json")
+        ):
+            visual = read_json(visual_path).get("visual")
+            title = visual_title(visual)
+            if not title:
+                continue
+            titled += 1
+            query = visual.get("query") if isinstance(visual, dict) else None
+            query_state = query.get("queryState") if isinstance(query, dict) else None
+            bound = " ".join(
+                f"{table} {field}"
+                for _, table, field in query_field_bindings(query_state or {})
+            ).lower()
+            unsupported.extend(
+                f"{visual_path.parent.name}: title says {word!r}, no field binding does"
+                for word in TITLE_METRIC_WORDS
+                if word.lower() in title.lower() and word.lower() not in bound
+            )
+
+        self.assertEqual(titled, 17, "Expected 17 titled visuals across the four pages")
+        self.assertEqual(unsupported, [])
 
 
 if __name__ == "__main__":

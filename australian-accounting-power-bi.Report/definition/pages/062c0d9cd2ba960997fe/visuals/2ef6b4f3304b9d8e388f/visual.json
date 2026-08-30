@@ -47,7 +47,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Revenue (FYTD)'"
+                  "Value": "'Revenue (All Periods)'"
                 }
               }
             }

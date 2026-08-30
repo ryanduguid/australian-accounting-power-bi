@@ -1,8 +1,15 @@
 table Fact_ATOBenchmark
 	lineageTag: a1b2c3d4-ato-0009-8899-aabbccddeeff
 
-	/// Industry average gross profit margin published by the Australian Taxation Office.
-	measure 'ATO Benchmark Gross Profit %' = AVERAGE(Fact_ATOBenchmark[GrossProfitPct_Avg]) / 100
+	/// Gross profit margin averaged across the published turnover bands for the ANZSIC industries
+	/// of the entities in context. Dim_Entity filters one way into Dim_ANZSIC, so the industry
+	/// selection is carried across to this table with TREATAS.
+	measure 'ATO Benchmark Gross Profit %' =
+			CALCULATE(
+				AVERAGE(Fact_ATOBenchmark[GrossProfitPct_Avg]),
+				TREATAS(VALUES(Dim_Entity[ANZSIC_Code]), Fact_ATOBenchmark[ANZSIC_Code])
+			)
+			/ 100
 		formatString: 0.0%
 		lineageTag: ato-meas-0001
 
@@ -16,8 +23,14 @@ table Fact_ATOBenchmark
 		formatString: 0.0%
 		lineageTag: ato-meas-0003
 
-	/// ATO benchmark operating expense ratio for the relevant ANZSIC turnover band.
-	measure 'ATO Benchmark Expense Ratio %' = AVERAGE(Fact_ATOBenchmark[TotalExpensesPct_Avg]) / 100
+	/// Operating expense ratio averaged across the published turnover bands for the ANZSIC
+	/// industries of the entities in context.
+	measure 'ATO Benchmark Expense Ratio %' =
+			CALCULATE(
+				AVERAGE(Fact_ATOBenchmark[TotalExpensesPct_Avg]),
+				TREATAS(VALUES(Dim_Entity[ANZSIC_Code]), Fact_ATOBenchmark[ANZSIC_Code])
+			)
+			/ 100
 		formatString: 0.0%
 		lineageTag: ato-meas-0004
 
@@ -34,8 +47,14 @@ table Fact_ATOBenchmark
 		formatString: 0.0%
 		lineageTag: ato-meas-0005
 
-	/// ATO benchmark rent ratio for the relevant ANZSIC turnover band.
-	measure 'ATO Benchmark Rent %' = AVERAGE(Fact_ATOBenchmark[RentPct_Avg]) / 100
+	/// Rent ratio averaged across the published turnover bands for the ANZSIC industries of the
+	/// entities in context.
+	measure 'ATO Benchmark Rent %' =
+			CALCULATE(
+				AVERAGE(Fact_ATOBenchmark[RentPct_Avg]),
+				TREATAS(VALUES(Dim_Entity[ANZSIC_Code]), Fact_ATOBenchmark[ANZSIC_Code])
+			)
+			/ 100
 		formatString: 0.0%
 		lineageTag: ato-meas-0006
 
@@ -52,8 +71,14 @@ table Fact_ATOBenchmark
 		formatString: 0.0%
 		lineageTag: ato-meas-0007
 
-	/// ATO benchmark motor vehicle expense ratio for the relevant ANZSIC band.
-	measure 'ATO Benchmark Motor Vehicle %' = AVERAGE(Fact_ATOBenchmark[MotorVehiclePct_Avg]) / 100
+	/// Motor vehicle expense ratio averaged across the published turnover bands for the ANZSIC
+	/// industries of the entities in context.
+	measure 'ATO Benchmark Motor Vehicle %' =
+			CALCULATE(
+				AVERAGE(Fact_ATOBenchmark[MotorVehiclePct_Avg]),
+				TREATAS(VALUES(Dim_Entity[ANZSIC_Code]), Fact_ATOBenchmark[ANZSIC_Code])
+			)
+			/ 100
 		formatString: 0.0%
 		lineageTag: ato-meas-0008
 
@@ -70,8 +95,14 @@ table Fact_ATOBenchmark
 		formatString: 0.0%
 		lineageTag: ato-meas-0009
 
-	/// ATO benchmark labour cost ratio for the relevant ANZSIC band.
-	measure 'ATO Benchmark Labour %' = AVERAGE(Fact_ATOBenchmark[LabourPct_Avg]) / 100
+	/// Labour cost ratio averaged across the published turnover bands for the ANZSIC industries
+	/// of the entities in context.
+	measure 'ATO Benchmark Labour %' =
+			CALCULATE(
+				AVERAGE(Fact_ATOBenchmark[LabourPct_Avg]),
+				TREATAS(VALUES(Dim_Entity[ANZSIC_Code]), Fact_ATOBenchmark[ANZSIC_Code])
+			)
+			/ 100
 		formatString: 0.0%
 		lineageTag: ato-meas-0010
 

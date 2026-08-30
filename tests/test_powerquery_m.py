@@ -69,6 +69,38 @@ class TestPowerQueryM(unittest.TestCase):
         self.assertIn("Number.Mod", content)
         self.assertIn("89", content)
 
+    def test_sample_entity_abns_pass_the_shipped_checksum(self) -> None:
+        """Run Fx_ValidateABN's own weights over every ABN in the entity master.
+
+        Shipping an entity the model's own validator rejects flags a fabricated group
+        entity as having an invalid ABN the moment the function is wired up.
+        """
+        weights_source = re.search(
+            r"Weights = \{([^}]*)\}", named_expressions()["Fx_ValidateABN"]
+        )
+        self.assertIsNotNone(weights_source, "Fx_ValidateABN must declare its weights")
+        weights = [int(weight) for weight in weights_source.group(1).split(",")]  # type: ignore[union-attr]
+        self.assertEqual(len(weights), 11)
+
+        rejected: list[str] = []
+        with (SAMPLES_DIR / "sample-entities.csv").open(
+            newline="", encoding="utf-8"
+        ) as handle:
+            for row in csv.DictReader(handle):
+                digits = [int(char) for char in row["ABN"] if char.isdigit()]
+                if len(digits) != 11:
+                    rejected.append(f"{row['EntityID']}:{row['ABN']}")
+                    continue
+                digits[0] -= 1
+                if sum(d * w for d, w in zip(digits, weights)) % 89 != 0:
+                    rejected.append(f"{row['EntityID']}:{row['ABN']}")
+
+        self.assertEqual(
+            rejected,
+            [],
+            "sample-entities.csv holds ABNs that fail the modulus-89 checksum",
+        )
+
     def test_csv_source_column_counts_match_fixture_rows(self) -> None:
         cases = {
             "Dim_Account": "sample-chart-of-accounts.csv",

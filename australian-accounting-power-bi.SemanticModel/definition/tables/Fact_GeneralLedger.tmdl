@@ -53,8 +53,14 @@ table Fact_GeneralLedger
 		formatString: $#,##0.00;($#,##0.00);$0.00
 		lineageTag: gl-meas-0008
 
-	/// Earnings before interest, tax, depreciation, and amortisation.
-	measure EBITDA = [Gross Profit] - [Operating Expenses]
+	/// Earnings before interest, tax, depreciation, and amortisation. Depreciation (890) and
+	/// finance interest (895) sit inside Operating Expenses, so both are added back here.
+	measure EBITDA =
+			[Net Profit Before Tax]
+			+ CALCULATE(
+				SUM(Fact_GeneralLedger[Debit]) - SUM(Fact_GeneralLedger[Credit]),
+				Dim_Account[AccountCode] IN {"890", "895"}
+			)
 		formatString: $#,##0.00;($#,##0.00);$0.00
 		lineageTag: gl-meas-0009
 
@@ -68,20 +74,22 @@ table Fact_GeneralLedger
 		formatString: 0.0%
 		lineageTag: gl-meas-0011
 
-	/// Total cumulative balance sheet assets.
+	/// Total cumulative balance sheet assets, accumulated to the last date in context.
 	measure 'Total Assets' =
 			CALCULATE(
 				SUM(Fact_GeneralLedger[Amount]),
-				Dim_Account[Class] = "Asset"
+				Dim_Account[Class] = "Asset",
+				DATESBETWEEN(Dim_Date[Date], BLANK(), MAX(Dim_Date[Date]))
 			)
 		formatString: $#,##0.00;($#,##0.00);$0.00
 		lineageTag: gl-meas-0012
 
-	/// Total cumulative balance sheet liabilities.
+	/// Total cumulative balance sheet liabilities, accumulated to the last date in context.
 	measure 'Total Liabilities' =
 			CALCULATE(
 				-1 * SUM(Fact_GeneralLedger[Amount]),
-				Dim_Account[Class] = "Liability"
+				Dim_Account[Class] = "Liability",
+				DATESBETWEEN(Dim_Date[Date], BLANK(), MAX(Dim_Date[Date]))
 			)
 		formatString: $#,##0.00;($#,##0.00);$0.00
 		lineageTag: gl-meas-0013
@@ -91,29 +99,42 @@ table Fact_GeneralLedger
 		formatString: $#,##0.00;($#,##0.00);$0.00
 		lineageTag: gl-meas-0014
 
-	/// Total shareholder equity and retained earnings.
+	/// Contributed capital and prior-year retained earnings, accumulated to the last date in context.
 	measure 'Total Equity' =
 			CALCULATE(
 				-1 * SUM(Fact_GeneralLedger[Amount]),
-				Dim_Account[Class] = "Equity"
+				Dim_Account[Class] = "Equity",
+				DATESBETWEEN(Dim_Date[Date], BLANK(), MAX(Dim_Date[Date]))
 			)
 		formatString: $#,##0.00;($#,##0.00);$0.00
 		lineageTag: gl-meas-0015
 
-	/// Diagnostic check asserting Assets = Liabilities + Equity (should equal $0.00).
-	measure 'Balance Sheet Check' = [Total Assets] - ([Total Liabilities] + [Total Equity])
+	/// Diagnostic check asserting Assets = Liabilities + Equity + earnings to date (should equal $0.00).
+	/// Earnings are never closed to account 510, so equity alone omits them.
+	measure 'Balance Sheet Check' =
+			[Total Assets]
+			- (
+				[Total Liabilities]
+				+ [Total Equity]
+				+ CALCULATE(
+					[Net Profit Before Tax],
+					DATESBETWEEN(Dim_Date[Date], BLANK(), MAX(Dim_Date[Date]))
+				)
+			)
 		formatString: $#,##0.00;($#,##0.00);$0.00
 		lineageTag: gl-meas-0016
 
-	/// Current Assets less Current Liabilities.
+	/// Current Assets less Current Liabilities, both accumulated to the last date in context.
 	measure 'Working Capital' =
 			CALCULATE(
 				SUM(Fact_GeneralLedger[Amount]),
-				Dim_Account[SubClass] = "Current Assets"
+				Dim_Account[SubClass] = "Current Assets",
+				DATESBETWEEN(Dim_Date[Date], BLANK(), MAX(Dim_Date[Date]))
 			)
 			- CALCULATE(
 				-1 * SUM(Fact_GeneralLedger[Amount]),
-				Dim_Account[SubClass] = "Current Liabilities"
+				Dim_Account[SubClass] = "Current Liabilities",
+				DATESBETWEEN(Dim_Date[Date], BLANK(), MAX(Dim_Date[Date]))
 			)
 		formatString: $#,##0.00;($#,##0.00);$0.00
 		lineageTag: gl-meas-0017
