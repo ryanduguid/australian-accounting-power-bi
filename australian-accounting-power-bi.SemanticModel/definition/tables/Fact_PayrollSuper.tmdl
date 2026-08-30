@@ -35,7 +35,8 @@ table Fact_PayrollSuper
 		lineageTag: stp-meas-0005
 
 	/// Proportion of superannuation liability received by funds within the statutory deadline.
-	measure 'Payday Super Compliance Rate %' = DIVIDE([Super Remitted On-Time], [Super Liability Accrued (Code L)], 1.0)
+	/// Blank rather than 100% for a period with no payroll events, matching [ATO Compliance Risk Profile].
+	measure 'Payday Super Compliance Rate %' = DIVIDE([Super Remitted On-Time], [Super Liability Accrued (Code L)], BLANK())
 		formatString: 0.0%
 		lineageTag: stp-meas-0006
 
