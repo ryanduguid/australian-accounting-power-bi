@@ -13,8 +13,8 @@ Most Power BI repositories on GitHub commit monolithic binary `.pbix` blobs with
 This project treats Power BI as source-controlled software engineering:
 1. **Plain-Text Version Control**: Built entirely on the Power BI Project format (`.pbip`), using Tabular Model Definition Language (`.tmdl`) and Enhanced Report Format (`.pbir`). Measures, visuals, relationships, and M expressions produce reviewable git diffs.
 2. **3-Way Financial Statements & Multi-Entity Consolidation**: P&L, Balance Sheet, and Cash Flow matrix reporting across a multi-entity corporate group (operating company, trading subsidiary, logistics entity, property trust) with automated intercompany transaction eliminations.
-3. **ATO Small Business Benchmarks Diagnostic**: Ingests ANZSIC industry classifications and scores business cost structures against official Australian Taxation Office benchmark bands and PCG 2026/1 compliance risk zones.
-4. **Live Payday Super Compliance Monitoring**: Tracks Single Touch Payroll Phase 2 events (Code Q - Qualifying Earnings, Code L - Super Liability at 12.0%) against the statutory 7-business-day fund receipt rule commencing 1 July 2026, including automated SGC shortfall and GIC nominal interest exposure calculators.
+3. **ATO Small Business Benchmarks Diagnostic**: Ingests ANZSIC industry classifications and scores business cost structures against the Australian Taxation Office's published small business benchmark ranges for the relevant industry and turnover band.
+4. **Live Payday Super Compliance Monitoring**: Tracks Single Touch Payroll Phase 2 events (Code Q - Qualifying Earnings, Code L - Super Liability at 12.0%) against the statutory 7-business-day fund receipt rule commencing 1 July 2026, including automated SG charge and notional earnings exposure calculators.
 
 ---
 
@@ -47,7 +47,7 @@ See [docs/data-model.md](docs/data-model.md) for table grain, schema description
 
 1. **Executive 3-Way Financial Performance**: Consolidated P&L, Balance Sheet, and Direct/Indirect Cash Flow bridge with interactive entity and period slicing.
 2. **Multi-Entity Consolidation & Eliminations**: Entity-level matrix views with automated intra-group elimination columns and intercompany loan audit trails.
-3. **ATO Benchmark & Practice Diagnostic**: ANZSIC industry quantile comparisons, gross margin and cost ratio variance analyses, and automated PCG 2026/1 audit risk ratings.
+3. **ATO Benchmark & Practice Diagnostic**: ANZSIC industry quantile comparisons, gross margin and cost ratio variance analyses, and an automated benchmark variance rating.
 4. **Payday Super & STP Compliance Monitor**: 7-business-day timeline tracker, clearing-house transit risk analyser, and estimated Super Guarantee Charge (SGC) exposure calculators.
 
 ---

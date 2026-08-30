@@ -39,12 +39,12 @@ table Fact_PayrollSuper
 		formatString: 0.0%
 		lineageTag: stp-meas-0006
 
-	/// Estimated Super Guarantee Charge liability (shortfall + nominal interest + admin fee).
+	/// Estimated Super Guarantee Charge (individual final shortfall, notional earnings, and administrative uplift).
 	measure 'Total SGC Exposure' = SUM(Fact_PayrollSuper[SGC_Shortfall])
 		formatString: $#,##0.00;($#,##0.00);$0.00
 		lineageTag: stp-meas-0007
 
-	/// Nominal interest accrued on late payments at the general interest charge (GIC) rate.
+	/// Individual notional earnings accrued on late contributions, compounding daily at the general interest charge (GIC) rate.
 	measure 'Total GIC Nominal Interest' = SUM(Fact_PayrollSuper[GIC_NominalInterest])
 		formatString: $#,##0.00;($#,##0.00);$0.00
 		lineageTag: stp-meas-0008
