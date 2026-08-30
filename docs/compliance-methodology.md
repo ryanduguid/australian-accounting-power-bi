@@ -46,7 +46,7 @@ The offset applies only where the fund receipt date is **strictly after** the du
 ## 2. ATO Small Business Benchmarks
 
 ### ANZSIC Benchmarking
-The ATO publishes financial performance benchmarks across turnover bands for small businesses based on income tax returns and activity statements.
+The ATO publishes financial performance benchmarks across turnover bands for small businesses based on income tax returns and activity statements. The model averages every published band for an industry; it does not select the band matching an entity's turnover.
 
 ### Key Ratios Monitored
 1. **Gross Profit Margin %**: `(Sales - Cost of Goods Sold) / Sales`

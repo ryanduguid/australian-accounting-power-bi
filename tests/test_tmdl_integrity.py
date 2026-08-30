@@ -4,6 +4,7 @@ test_tmdl_integrity.py - Validates TMDL definitions, star schema relationships, 
 
 from __future__ import annotations
 
+import csv
 import json
 import re
 import unittest
@@ -18,6 +19,57 @@ TMDL_DIR = SEMANTIC_MODEL_DIR / "definition"
 TMDL_TABLES_DIR = TMDL_DIR / "tables"
 RELATIONSHIPS_FILE = TMDL_DIR / "relationships.tmdl"
 DATABASE_FILE = TMDL_DIR / "database.tmdl"
+SAMPLES_DIR = BASE_DIR / "samples"
+
+# The star schema drawn by README.md and docs/data-model.md, as (fromColumn, toColumn) pairs.
+DOCUMENTED_RELATIONSHIPS = {
+    ("Fact_GeneralLedger.AccountCode", "Dim_Account.AccountCode"),
+    ("Fact_GeneralLedger.EntityID", "Dim_Entity.EntityID"),
+    ("Fact_GeneralLedger.PostingDate", "Dim_Date.Date"),
+    ("Fact_Budget.AccountCode", "Dim_Account.AccountCode"),
+    ("Fact_Budget.EntityID", "Dim_Entity.EntityID"),
+    ("Fact_Budget.PeriodDate", "Dim_Date.Date"),
+    ("Fact_PayrollSuper.EntityID", "Dim_Entity.EntityID"),
+    ("Fact_PayrollSuper.PayDate", "Dim_Date.Date"),
+    ("Fact_PayrollSuper.EmployeeID", "Dim_Employee.EmployeeID"),
+    ("Dim_Entity.ANZSIC_Code", "Dim_ANZSIC.ANZSIC_Code"),
+    ("Fact_ATOBenchmark.ANZSIC_Code", "Dim_ANZSIC.ANZSIC_Code"),
+}
+
+
+def measure_expressions(tmdl_file: Path) -> dict[str, str]:
+    """Map every measure in a TMDL table file to its DAX expression, flattened to one line."""
+    lines = tmdl_file.read_text(encoding="utf-8").splitlines()
+    object_starts = [
+        index
+        for index, line in enumerate(lines)
+        if re.match(
+            r"^\t(?:measure|column|partition|hierarchy|calculationGroup|annotation|///)",
+            line,
+        )
+    ]
+    expressions: dict[str, str] = {}
+
+    for index, line in enumerate(lines):
+        if not line.startswith("\tmeasure "):
+            continue
+
+        declaration = line.removeprefix("\tmeasure ")
+        name = declaration.split(" =", 1)[0].strip("'")
+        next_object = next(
+            (object_index for object_index in object_starts if object_index > index),
+            len(lines),
+        )
+        # Keep the expression lines; drop trailing properties such as formatString and lineageTag.
+        body = [declaration.split(" =", 1)[1]]
+        body.extend(
+            candidate
+            for candidate in lines[index + 1 : next_object]
+            if not re.match(r"^\t\t\w+:", candidate)
+        )
+        expressions[name] = " ".join(part.strip() for part in body if part.strip())
+
+    return expressions
 
 
 class TestTmdlIntegrity(unittest.TestCase):
@@ -54,6 +106,130 @@ class TestTmdlIntegrity(unittest.TestCase):
         for name, from_col, to_col in rel_blocks:
             self.assertIn(".", from_col, f"Relationship {name} fromColumn must include table name")
             self.assertIn(".", to_col, f"Relationship {name} toColumn must include table name")
+
+    def test_documented_star_schema_edges_all_exist(self) -> None:
+        """Every edge the README and data-model ER diagrams draw must be a real relationship.
+
+        A documented edge that is missing leaves its dimension orphaned: filters never
+        propagate and the dimension repeats the grand total on every row.
+        """
+        content = RELATIONSHIPS_FILE.read_text(encoding="utf-8")
+        declared = set(
+            re.findall(r"fromColumn:\s+([\w\.]+)\s+toColumn:\s+([\w\.]+)", content)
+        )
+
+        self.assertEqual(
+            sorted(DOCUMENTED_RELATIONSHIPS - declared),
+            [],
+            "relationships.tmdl is missing a documented star schema edge",
+        )
+        self.assertEqual(
+            sorted(declared - DOCUMENTED_RELATIONSHIPS),
+            [],
+            "relationships.tmdl declares an edge the ER diagrams do not document",
+        )
+
+    def test_dim_anzsic_declares_every_industry_code_the_model_joins_on(self) -> None:
+        """Dim_ANZSIC is a literal lookup, so both ANZSIC relationships die without these codes."""
+        partition = (TMDL_TABLES_DIR / "Dim_ANZSIC.tmdl").read_text(encoding="utf-8")
+        declared = set(re.findall(r'\{"(\d{4})",', partition))
+
+        joined: set[str] = set()
+        for fixture in ("sample-entities.csv", "sample-ato-benchmarks.csv"):
+            with (SAMPLES_DIR / fixture).open(newline="", encoding="utf-8") as handle:
+                joined.update(row["ANZSIC_Code"] for row in csv.DictReader(handle))
+
+        self.assertTrue(joined, "fixtures must supply the ANZSIC codes the model joins on")
+        self.assertEqual(
+            sorted(joined - declared),
+            [],
+            "Dim_ANZSIC must declare every ANZSIC code Dim_Entity and Fact_ATOBenchmark join on",
+        )
+
+    def test_ebitda_adds_back_depreciation_and_interest(self) -> None:
+        """Depreciation (890) and finance interest (895) are in the Operating Expenses SubClass.
+
+        Without an explicit add-back, EBITDA is the same arithmetic as Net Profit Before Tax.
+        """
+        expressions = measure_expressions(TMDL_TABLES_DIR / "Fact_GeneralLedger.tmdl")
+        ebitda = expressions["EBITDA"]
+
+        for account_code in ('"890"', '"895"'):
+            self.assertIn(
+                account_code,
+                ebitda,
+                f"EBITDA must add back account {account_code} to differ from Net Profit Before Tax",
+            )
+
+    def test_balance_sheet_check_accounts_for_earnings_not_closed_to_equity(self) -> None:
+        """Current-period earnings are never closed to account 510 in the ledger fixture.
+
+        Total Equity therefore excludes them, and a check of Assets less Liabilities and
+        Equity alone returns the period's net profit rather than the documented $0.00, so
+        it reads $0.00 only where that profit happens to be nil - in the fixture, only the
+        single opening-balance day 2024-07-01.
+        """
+        expressions = measure_expressions(TMDL_TABLES_DIR / "Fact_GeneralLedger.tmdl")
+
+        self.assertIn(
+            "[Net Profit Before Tax]",
+            expressions["Balance Sheet Check"],
+            "Balance Sheet Check must include earnings to date or it returns the period's "
+            "net profit instead of $0.00 wherever that profit is not nil",
+        )
+
+    def test_balance_sheet_measures_accumulate_to_the_last_date_in_context(self) -> None:
+        """Balance sheet measures are described as cumulative and are plotted on a monthly axis.
+
+        A plain class-filtered SUM returns only the period's movement under a date context.
+        """
+        expressions = measure_expressions(TMDL_TABLES_DIR / "Fact_GeneralLedger.tmdl")
+        running_total = "DATESBETWEEN(Dim_Date[Date], BLANK(), MAX(Dim_Date[Date]))"
+        expected_legs = {
+            "Total Assets": 1,
+            "Total Liabilities": 1,
+            "Total Equity": 1,
+            "Working Capital": 2,
+        }
+
+        for measure_name, legs in expected_legs.items():
+            self.assertEqual(
+                expressions[measure_name].count(running_total),
+                legs,
+                f"[{measure_name}] must accumulate all {legs} of its legs to the last visible date",
+            )
+
+    def test_benchmark_measures_follow_the_selected_entity_industry(self) -> None:
+        """Dim_Entity filters one way into Dim_ANZSIC, so entity context never reaches the facts.
+
+        Without TREATAS, every benchmark averages all industries at once and the risk
+        rating becomes a constant.
+        """
+        expressions = measure_expressions(TMDL_TABLES_DIR / "Fact_ATOBenchmark.tmdl")
+        industry_filter = "TREATAS(VALUES(Dim_Entity[ANZSIC_Code]), Fact_ATOBenchmark[ANZSIC_Code])"
+        benchmark_measures = sorted(
+            name for name in expressions if name.startswith("ATO Benchmark ")
+        )
+
+        self.assertEqual(len(benchmark_measures), 5)
+        for measure_name in benchmark_measures:
+            self.assertIn(
+                industry_filter,
+                expressions[measure_name],
+                f"[{measure_name}] must be scoped to the industries of the entities in context",
+            )
+
+    def test_compliance_rate_is_blank_when_no_super_was_accrued(self) -> None:
+        """A period with no payroll events is missing data, not full statutory compliance."""
+        expressions = measure_expressions(TMDL_TABLES_DIR / "Fact_PayrollSuper.tmdl")
+        compliance_rate = expressions["Payday Super Compliance Rate %"]
+
+        self.assertIn("BLANK()", compliance_rate)
+        self.assertNotIn(
+            "1.0",
+            compliance_rate,
+            "A zero super liability must not render as 100% compliance",
+        )
 
     def test_all_measures_have_supported_descriptions_and_numeric_formats(self) -> None:
         """Require descriptions for every measure and formats for non-text measures."""

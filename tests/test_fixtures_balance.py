@@ -4,25 +4,30 @@ test_fixtures_balance.py - Verifies double-entry accounting integrity of sample 
 
 from __future__ import annotations
 
+import contextlib
 import csv
+import importlib.util
+import io
+import tempfile
 import unittest
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SAMPLES_DIR = BASE_DIR / "samples"
+GENERATOR_FILE = BASE_DIR / "tools" / "generate_fixtures.py"
+FIXTURE_FILES = [
+    "sample-entities.csv",
+    "sample-chart-of-accounts.csv",
+    "sample-general-ledger.csv",
+    "sample-budgets.csv",
+    "sample-payroll-super.csv",
+    "sample-ato-benchmarks.csv",
+]
 
 
 class TestFixturesBalance(unittest.TestCase):
     def test_sample_files_exist(self) -> None:
-        expected = [
-            "sample-entities.csv",
-            "sample-chart-of-accounts.csv",
-            "sample-general-ledger.csv",
-            "sample-budgets.csv",
-            "sample-payroll-super.csv",
-            "sample-ato-benchmarks.csv",
-        ]
-        for fname in expected:
+        for fname in FIXTURE_FILES:
             fpath = SAMPLES_DIR / fname
             self.assertTrue(fpath.is_file(), f"Missing required fixture: {fname}")
 
@@ -86,6 +91,38 @@ class TestFixturesBalance(unittest.TestCase):
             total_ic_net,
             0.0,
             f"Intercompany aggregate net movement does not eliminate to zero: {total_ic_net}",
+        )
+
+
+class TestFixtureRegeneration(unittest.TestCase):
+    def test_regenerating_reproduces_the_committed_fixtures_byte_for_byte(self) -> None:
+        """README calls samples/ the deterministic output of tools/generate_fixtures.py.
+
+        The generator wrote CRLF while the committed CSVs are LF, so anyone who ran it
+        rewrote all six files end to end: 2,401 changed lines that are identical once
+        newlines are normalised. Churn on that scale hides any real fixture edit inside
+        it and leaves the determinism claim unreviewable.
+        """
+        spec = importlib.util.spec_from_file_location("generate_fixtures", GENERATOR_FILE)
+        self.assertIsNotNone(spec, "generate_fixtures.py must be importable")
+        generator = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+        spec.loader.exec_module(generator)  # type: ignore[union-attr]
+
+        with tempfile.TemporaryDirectory() as scratch:
+            generator.SAMPLES_DIR = Path(scratch)
+            with contextlib.redirect_stdout(io.StringIO()):
+                generator.generate_fixtures()
+
+            differing = [
+                fname
+                for fname in FIXTURE_FILES
+                if (Path(scratch) / fname).read_bytes() != (SAMPLES_DIR / fname).read_bytes()
+            ]
+
+        self.assertEqual(
+            differing,
+            [],
+            "Regenerated fixtures differ from the committed bytes: " + ", ".join(differing),
         )
 
 

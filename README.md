@@ -12,8 +12,8 @@ Most Power BI repositories on GitHub commit monolithic binary `.pbix` blobs with
 
 This project treats Power BI as source-controlled software engineering:
 1. **Plain-Text Version Control**: Built entirely on the Power BI Project format (`.pbip`), using Tabular Model Definition Language (`.tmdl`) and Enhanced Report Format (`.pbir`). Measures, visuals, relationships, and M expressions produce reviewable git diffs.
-2. **3-Way Financial Statements & Multi-Entity Consolidation**: P&L, Balance Sheet, and Cash Flow matrix reporting across a multi-entity corporate group (operating company, trading subsidiary, logistics entity, property trust) with automated intercompany transaction eliminations.
-3. **ATO Small Business Benchmarks Diagnostic**: Ingests ANZSIC industry classifications and scores business cost structures against the Australian Taxation Office's published small business benchmark ranges for the relevant industry and turnover band.
+2. **Multi-Entity Consolidation & Financial Statements**: P&L matrix reporting and balance sheet measures across a multi-entity corporate group (operating company, trading subsidiary, logistics entity, property trust) with automated intercompany transaction eliminations.
+3. **ATO Small Business Benchmarks Diagnostic**: Ingests ANZSIC industry classifications and scores business cost structures against the Australian Taxation Office's published small business benchmark ranges for the relevant industry, averaged across that industry's published turnover bands.
 4. **Live Payday Super Compliance Monitoring**: Tracks Single Touch Payroll Phase 2 events (Code Q - Qualifying Earnings, Code L - Super Liability at 12.0%) against the statutory 7-business-day fund receipt rule commencing 1 July 2026, including automated SG charge and notional earnings exposure calculators.
 
 ---
@@ -45,7 +45,7 @@ See [docs/data-model.md](docs/data-model.md) for table grain, schema description
 
 ## Report Structure (4 Pages)
 
-1. **Executive 3-Way Financial Performance**: Consolidated P&L, Balance Sheet, and Direct/Indirect Cash Flow bridge with interactive entity and period slicing.
+1. **Executive Financial Performance**: Consolidated P&L matrix with revenue, gross margin, EBITDA, and net asset cards, and a cumulative working capital trend.
 2. **Multi-Entity Consolidation & Eliminations**: Entity-level matrix views with automated intra-group elimination columns and intercompany loan audit trails.
 3. **ATO Benchmark & Practice Diagnostic**: ANZSIC industry quantile comparisons, gross margin and cost ratio variance analyses, and an automated benchmark variance rating.
 4. **Payday Super & STP Compliance Monitor**: 7-business-day timeline tracker, clearing-house transit risk analyser, and estimated Super Guarantee Charge (SGC) exposure calculators.
@@ -131,6 +131,8 @@ npx --yes @microsoft/powerbi-report-authoring-cli@0.1.4 validate australian-acco
 The test suite verifies:
 - Every journal in `sample-general-ledger.csv` balances to zero (debits equal credits).
 - Intercompany entries balance to zero across the group.
+- The committed fixtures regenerate byte-for-byte from `tools/generate_fixtures.py`, and every sample ABN passes the statutory modulus-89 checksum.
+- Every relationship the ER diagrams document exists, and `Dim_ANZSIC` declares every industry code the entity and benchmark fixtures join on.
 - Every DAX measure uses supported `///` description syntax, and every numeric measure has an explicit format string.
 - All relationships enforce strict single-direction star schema filtering.
 - All eight named Power Query expressions use balanced `let ... in` blocks, valid fixture widths, and valid ABN algorithm weights.

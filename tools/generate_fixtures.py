@@ -133,6 +133,8 @@ def add_business_days(start_date: datetime.date, num_days: int) -> datetime.date
     return current
 
 
+# Every ABN below satisfies the statutory modulus-89 checksum that Fx_ValidateABN applies,
+# so the shipped entity master passes the repo's own validator. Keep it that way when editing.
 ENTITIES = [
     {
         "EntityID": "ENT001",
@@ -150,7 +152,7 @@ ENTITIES = [
         "EntityID": "ENT002",
         "LegalName": "Draynor Produce Pty Ltd",
         "TradingName": "Draynor Fresh Foods",
-        "ABN": "82147629350",
+        "ABN": "82147609350",
         "ACN": "234567890",
         "TaxStructure": "Company",
         "EntityRole": "Trading Subsidiary",
@@ -162,7 +164,7 @@ ENTITIES = [
         "EntityID": "ENT003",
         "LegalName": "Falador Freight Pty Ltd",
         "TradingName": "Falador National Logistics",
-        "ABN": "33087542911",
+        "ABN": "33087542991",
         "ACN": "345678901",
         "TaxStructure": "Company",
         "EntityRole": "Logistics Subsidiary",
@@ -174,7 +176,7 @@ ENTITIES = [
         "EntityID": "ENT004",
         "LegalName": "Ardougne Holdings Trust",
         "TradingName": "Ardougne Commercial Property",
-        "ABN": "12345678901",
+        "ABN": "12325678901",
         "ACN": "",
         "TaxStructure": "Unit Trust",
         "EntityRole": "Property Asset Trust",
@@ -233,13 +235,13 @@ def generate_fixtures():
 
     # 1. Write Entities
     with open(SAMPLES_DIR / "sample-entities.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(ENTITIES[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(ENTITIES[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(ENTITIES)
 
     # 2. Write Chart of Accounts
     with open(SAMPLES_DIR / "sample-chart-of-accounts.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(CHART_OF_ACCOUNTS[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(CHART_OF_ACCOUNTS[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(CHART_OF_ACCOUNTS)
 
@@ -349,7 +351,7 @@ def generate_fixtures():
         add_balanced_journal(d_end, "ENT002", "Intercompany Freight Costs", [("750", 8500.0)], [("380", 8500.0)], ic_entity="ENT003")
 
     with open(SAMPLES_DIR / "sample-general-ledger.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(gl_rows[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(gl_rows[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(gl_rows)
 
@@ -377,7 +379,7 @@ def generate_fixtures():
                 budget_rows.append({"PeriodDate": p_date, "EntityID": ent, "AccountCode": "895", "BudgetAmount": "5000.00"})
 
     with open(SAMPLES_DIR / "sample-budgets.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(budget_rows[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(budget_rows[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(budget_rows)
 
@@ -466,7 +468,7 @@ def generate_fixtures():
             cur_date += datetime.timedelta(days=period_days)
 
     with open(SAMPLES_DIR / "sample-payroll-super.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(payroll_rows[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(payroll_rows[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(payroll_rows)
 
@@ -486,7 +488,7 @@ def generate_fixtures():
     ]
 
     with open(SAMPLES_DIR / "sample-ato-benchmarks.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(benchmarks[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(benchmarks[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(benchmarks)
 

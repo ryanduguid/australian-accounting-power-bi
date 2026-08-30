@@ -79,7 +79,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Working Capital & Operating Cash Trend'"
+                  "Value": "'Working Capital & Net Assets Trend'"
                 }
               }
             }

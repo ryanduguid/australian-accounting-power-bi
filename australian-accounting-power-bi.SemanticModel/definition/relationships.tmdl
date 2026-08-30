@@ -30,6 +30,10 @@ relationship 'Fact_PayrollSuper to Dim_Date'
 	fromColumn: Fact_PayrollSuper.PayDate
 	toColumn: Dim_Date.Date
 
+relationship 'Fact_PayrollSuper to Dim_Employee'
+	fromColumn: Fact_PayrollSuper.EmployeeID
+	toColumn: Dim_Employee.EmployeeID
+
 relationship 'Dim_Entity to Dim_ANZSIC'
 	fromColumn: Dim_Entity.ANZSIC_Code
 	toColumn: Dim_ANZSIC.ANZSIC_Code
