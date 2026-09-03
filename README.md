@@ -1,5 +1,16 @@
 # Australian Accounting Power BI
 
+> [!IMPORTANT]
+> **Repository migration: 3 September 2026.** We moved maintained development to
+> [`apps/australian-accounting-power-bi`](https://github.com/ryanduguid/accounting-review-pipeline/tree/main/apps/australian-accounting-power-bi)
+> in Accounting Review Pipeline.
+> Use the shared
+> [`Xero trial-balance contract`](https://github.com/ryanduguid/accounting-review-pipeline/tree/main/contracts/xero-trial-balance-v1).
+>
+> This repository has no rollback release, so it remains the authoritative
+> fallback until the fourteen-day observation window closes on
+> 17 September 2026. Open new issues and pull requests in Accounting Review Pipeline.
+
 [![Verify](https://github.com/ryanduguid/australian-accounting-power-bi/actions/workflows/verify.yml/badge.svg)](https://github.com/ryanduguid/australian-accounting-power-bi/actions/workflows/verify.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Status: incubating.** This source-controlled Power BI Project (`.pbip`) is an evolving reference implementation, not a production-ready Power BI solution. It demonstrates Australian accounting domain modelling, dimensional star schema design, Tabular Model Definition Language (TMDL), calculation groups, and automated GitHub Actions CI verification.
